@@ -25,7 +25,7 @@ MAXscore = 5.0
 MINscore = -5.0
 PENALTYfactor = 0.3 
 
-UIdefaults = { # Fallbacks for UI if translation fails, if we had more time we would rather have a database of all sets of language
+UIdefaults = { # Low-tech but safe method of storing UI defaults
     "title": "B.I.S.O.N", 
     "profile": "Mastery Profile", 
     "start": "Run", 
