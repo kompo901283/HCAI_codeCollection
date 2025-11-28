@@ -227,7 +227,7 @@ class InferenceEngine:
                 return cached
 
         try:
-            translator = GoogleTranslator(source= "en", target = lang)
+            translator = GoogleTranslator(source= "en", target = lang) # Currently lang can only be 13 languages, but the library supports many more
             keys = list(UIdefaults.keys())
             values = list(UIdefaults.values())
             translatedValues = translator.translate_batch(values)
