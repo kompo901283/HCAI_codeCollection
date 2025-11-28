@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>B.I.S.O.N</title>
+  <style>
+    :root{--accent:#0b66ff;--correct:#2da44e;--wrong:#d73a49;--muted:#6b7280}
+    
+    /* Layout basics */
+    html,body{height:100%}
+    body { display:flex; flex-direction:column; min-height:100vh; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Arial; padding: 32px; max-width: 900px; margin: 0 auto; background: #D4CCBA; color:#000 }
+    
+    .card{background:white; border-radius:12px; padding:20px; box-shadow:0 6px 18px rgba(15,23,42,0.06);} 
+    
+    header.card{ background: transparent; box-shadow: none; border-radius: 0; padding: 8px 0 18px 0; }
+    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;position:relative}
+    header h1{margin:0;font-size:2.4rem;font-weight:700;position:absolute;left:50%;transform:translateX(-50%);top:14px}
+    
+    /* Form controls */
+    .controls{display:flex;gap:12px;align-items:center}
+    select,input[type=number]{padding:8px;border-radius:8px;border:1px solid #e6edf3}
+    button{background:var(--accent); color:white;border:0;padding:10px 14px;border-radius:8px;cursor:pointer}
+    button.secondary{background:transparent;color:var(--accent);border:1px solid #dbeafe}
+    button:disabled{opacity:0.6;cursor:default}
+    .meta{color:#000;font-size:0.9rem}
+    
+    .grid{display:grid;grid-template-columns:1fr 280px;gap:16px; min-height: calc(100vh - 120px); align-items:center}
+    .hidden { display:none !important; }
+    
+    @media(max-width:880px){ .grid{grid-template-columns:1fr} }
+    
+    #start{ display:flex; align-items:center; justify-content:center; height:100%; }
+    #auth{ width:100%; max-width:480px; margin:0 auto; transform: translateX(20px); }
+    #auth label{ display:block; margin:6px 0; }
+    #auth input[type="text"], #auth input[type="password"]{ width:auto; box-sizing:border-box; padding:8px; }
+    
+    /* The sentence game area */
+    .sentence-box { font-size: 1.4em; line-height: 2.0; min-height: 80px; position: relative; }
+    
+    /* Input field styling with masking */
+    .input-wrapper {
+        display: inline-block;
+        position: relative;
+        vertical-align: bottom;
+        margin: 0 5px;
+        width: 140px; 
+    }
+
+    .bg-mask {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border-bottom: 3px solid transparent; 
+        padding: 5px;
+        color: #d1d5db; 
+        font-family: 'Courier New', Courier, monospace;
+        font-weight: bold;
+        letter-spacing: 3px;
+        pointer-events: none; 
+        z-index: 1;
+        white-space: pre; 
+        overflow: hidden;
+        text-align: left; 
+    }
+
+    .input-gap { 
+        position: relative;
+        z-index: 2;
+        border: none; 
+        border-bottom: 3px solid var(--accent); 
+        width: 100%; 
+        text-align: left; 
+        font-size: 1em; 
+        background: transparent; 
+        padding: 5px; 
+        color: var(--accent); 
+        font-weight: bold; 
+        border-radius: 4px; 
+        font-family: 'Courier New', Courier, monospace;
+        letter-spacing: 3px; 
+    }
+    .input-gap:focus { outline: none; border-bottom-color: #1d4ed8; }
+
+    /* Hint area above input */
+    .hint-wrapper {
+        display: inline-flex;
+        flex-direction: column;
+        vertical-align: bottom;
+        align-items: center; 
+    }
+    
+    .meta-info {
+        font-size: 0.6em;
+        color: #6b7280;
+        margin-bottom: 2px;
+        font-family: 'Segoe UI', sans-serif;
+        line-height: 1.2;
+        text-align: center;
+        white-space: nowrap;
+    }
+
+    .label-tag { text-transform: uppercase; font-weight: bold; font-size: 0.9em; margin-right: 5px; color: #9ca3af; }
+    .trans-text { color: #4b5563; font-weight: bold; }
+
+    /* feedback messages */
+    .feedback-box { display: none; margin-top: 20px; padding: 20px; border-radius: 8px; border-left: 5px solid gray; animation: slideIn 0.3s ease; }
+    .feedback-correct { background: #ecfdf5; border-color: var(--correct); }
+    .feedback-wrong { background: #fef2f2; border-color: var(--wrong); }
+    .comparison { display: flex; flex-direction: column; gap: 5px; margin-top: 10px; font-size: 0.9em; }
+    
+    .full-trans-feedback {
+        margin-top: 8px;
+        margin-bottom: 8px;
+        padding: 8px;
+        background: rgba(255,255,255,0.6);
+        border-radius: 4px;
+        font-style: italic;
+        color: #4b5563;
+    }
+
+    .modal-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.5); z-index: 2000;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .modal-content {
+        background: white; padding: 20px; border-radius: 12px;
+        width: 90%; max-width: 500px; box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    }
+    .file-list-item {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 10px; border-bottom: 1px solid #eee;
+    }
+    .file-list-item:last-child { border-bottom: none; }
+
+    #peekBox {
+        font-style: italic;
+        color: #6b7280;
+        margin-bottom: 15px;
+        padding: 10px;
+        background: #f9fafb;
+        border-radius: 4px;
+        border-left: 3px solid #d1d5db;
+    }
+
+    #helpBtn { background: #8b5cf6; } 
+    #helpBtn:hover { background: #7c3aed; }
+    #helpBtn:disabled { background: #c4b5fd; }
+    
+    #peekBtn { background: #10b981; }
+    #peekBtn:hover { background: #059669; }
+    #peekBtn:disabled { background: #6ee7b7; }
+
+    /* Score badges (Sidebar) */
+    .score-cloud { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .tag { font-size: 0.8em; padding: 4px 12px; border-radius: 15px; border: 1px solid #e5e7eb; }
+    .tag.critical { background: #7f1d1d; color: #fecaca; border-color: #ef4444; }
+    .tag.struggle { background: #fee2e2; color: #991b1b; border-color: #f87171; }
+    .tag.neutral  { background: #f3f4f6; color: #374151; border-color: #d1d5db; }
+    .tag.good     { background: #d1fae5; color: #065f46; border-color: #34d399; }
+    .tag.mastered { background: #14532d; color: #dcfce7; border-color: #22c55e; }
+
+    @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .fab-btn { position: fixed; bottom: 30px; right: 30px; width: 50px; height: 50px; border-radius: 50%; font-size: 1.5rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 1000; }
+    .info-section h4 { margin-bottom: 5px; color: var(--accent); }
+    .info-section p { font-size: 0.9em; line-height: 1.4; color: #4b5563; margin-top: 0; }
+
+
+    button#logoutBtn {
+      background: white;
+      color: var(--accent);
+      border: 1px solid #dbeafe;
+      padding: 10px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    button#tutorialBtn{
+      background: white;
+      color: var(--accent);
+      border: 1px solid #dbeafe;
+      padding: 10px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    button#howAmIGradedBtn{
+      background: white;
+      color: var(--accent);
+      border: 1px solid #dbeafe;
+      padding: 10px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+  </style>
+</head>
+<body>
+  <!-- Header with title and logout -->
+  <header class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;width:100%;">
+      <h1 style="margin:0">B.I.S.O.N</h1>
+      <div style="display:flex;gap:12px;align-items:center">
+        <div id="who" class="meta"></div>
+        <button id="tutorialBtn" onclick="toggleTutorialModal()" class="secondary hidden" style="margin-right:10px;">Tutorial</button>
+        <button id="logoutBtn" class="secondary hidden">Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="grid">
+    <div class="card" id="mainContentCard">
+      
+      <div id="start">
+        <div id="auth">
+          <div style="margin-bottom:8px"><strong>Sign in or create an account</strong></div>
+          <label>Username: <input id="authUser" type="text" /></label>
+          <label style="margin-left:8px">Password: <input id="authPass" type="password" /></label>
+          <div style="margin-top:8px;display:flex;gap:8px;align-items:center">
+            <button id="loginBtn" type="button">Sign in</button>
+            <button id="createBtn" type="button" class="secondary">Create account</button>
+          </div>
+          <div id="createAccount" class="hidden" style="margin-top:12px">
+            <div style="margin-bottom:8px"><strong>Create a new account</strong></div>
+            <label>Username: <input id="createUser" type="text" /></label>
+            <label style="margin-left:8px">Password: <input id="createPass" type="password" /></label>
+            <label style="display:block;margin-top:8px">Confirm password: <input id="createPass2" type="password" /></label>
+            <div style="margin-top:8px;display:flex;gap:8px;align-items:center">
+              <button id="createConfirmBtn" type="button">Create</button>
+              <button id="createBackBtn" type="button" class="secondary">Back to sign in</button>
+            </div>
+            <div id="createMsg" class="meta" style="margin-top:8px"></div>
+          </div>
+          <div id="authMsg" class="meta" style="margin-top:8px"></div>
+        </div>
+      </div>
+
+      <!-- Game interface -->
+      <div id="hcai-interface" class="hidden">
+        <div class="header" style="border-bottom:none; padding-bottom:0;">
+            <div>
+                <!-- Language Selector -->
+                <select id="langSelect" onchange="changeLanguage()">
+                    <option value="en">Language > English</option>
+                    <option value="de">Language > German</option>
+                    <option value="es">Language > Spanish</option>
+                    <option value="fr">Language > French</option>
+                    <option value="it">Language > Italian</option>
+                    <option value="pt">Language > Portuguese</option>
+                    <option value="nl">Language > Dutch</option>
+                    <option value="ru">Language > Russian</option>
+                    <option value="zh-CN">Language > Chinese</option>
+                    <option value="ja">Language > Japanese</option>
+                    <option value="ko">Language > Korean</option>
+                    <option value="ar">Language > Arabic</option>
+                    <option value="tr">Language > Turkish</option>
+                </select>
+                <!-- Difficulty selector -->
+                <select id="diffSelect">
+                    <option value="1">Lvl 1 (Mastered)</option>
+                    <option value="2">Lvl 2</option>
+                    <option value="3" selected>Lvl 3 (Exploration)</option>
+                    <option value="4">Lvl 4</option>
+                    <option value="5">Lvl 5 (Difficult)</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- The sentence and input area -->
+        <div class="sentence-box">
+            <div id="peekBox" class="hidden"></div>
+            <div id="sentenceContainer">Press "run" to start...</div>
+        </div>
+
+        <!-- feedback section -->
+        <div id="feedbackArea" class="feedback-box">
+            <h3 id="fbTitle">Result</h3>
+            <div class="comparison">
+                <div><span id="uiYouWrote">You wrote:</span> <strong id="fbUser">...</strong></div>
+                <div><span id="uiCorrect">Correct:</span> <strong id="fbCorrect">...</strong></div>
+                <div id="fbFullTrans" class="full-trans-feedback">...</div>
+            </div>
+            <p id="fbExplain" style="margin-top:10px; font-style: italic; color:#666;"></p>
+            <div style="display:flex; gap:10px; margin-top:10px;">
+                <button id="howAmIGradedBtn" onclick="toggleGradingInfo()" style="font-size:0.8em;" class="secondary">How am i graded?</button>
+                <button id="tutorialBtn" onclick="toggleTutorialModal()" style="font-size:0.8em;" class="secondary">Tutorial</button>
+            </div>
+            <div id="gradingInfo" class="hidden" style="font-size:0.8em; color:#6b7280; margin-top:5px;">
+                <span id="gradingInfoText">We compare your answer to the target using Levenshtein distance (edit distance). 0 means perfect. 1-2 means a typo. Higher means a different word. Your mastery score updates based on this distance.</span>
+            </div>
+        </div>
+
+        <!-- Control buttons -->
+        <div class="control-bar">
+            <button id="mainBtn" onclick="handleAction()">Run</button>
+            <button id="helpBtn" onclick="giveHint()" disabled>Help</button>
+            <button id="peekBtn" onclick="togglePeek()" disabled>Peek sentence</button>
+            <span id="loader" style="display:none; color:#6b7280;">Thinking...</span>
+        </div>
+        
+      </div>
+
+    </div>
+
+    <!-- Sidebar profile -->
+    <aside class="card" style="height:fit-content">
+      <div id="sidebarContent" class="hidden">
+          <h3 id="uiProfileTitle" style="margin-top:0;">Mastery Profile:</h3>
+          <div class="score-cloud" id="scoreBoard">
+              <span style="color:#666; font-size:0.9em">Loading profile...</span>
+          </div>
+
+          <div style="margin-top:20px; border-top:1px solid #eee; padding-top:10px;">
+            <div id="adminPanel" class="hidden" style="margin-top:12px">
+              <h4>Admin: Manage accounts</h4>
+              <div style="margin-top:8px">
+                <button id="openAdminPage" class="secondary" disabled title="Disabled in local mode">Open Admin Page</button>
+              </div>
+            </div>
+            
+            <div style="margin-top:15px;">
+                <button id="manageDataBtn" onclick="openDataModal()" class="secondary" style="width:100%; font-size:0.9em;">Manage my data</button>
+                <button id="viewMapBtn" onclick="viewClusterMap()" class="secondary" style="width:100%; margin-top:8px; font-size:0.9em;">View Cluster Dictionary</button>
+            </div>
+          </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Data management -->
+  <div id="dataModal" class="modal-overlay hidden">
+      <div class="modal-content">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+              <h3 id="uiDataModalTitle" style="margin:0;">My Data Files</h3>
+              <button onclick="closeDataModal()" class="secondary" style="padding:4px 8px;">X</button>
+          </div>
+          <div id="uiDataModalMeta" class="meta" style="margin-bottom:15px;">
+              Currently, the data related to your mastery of labels is the only data that is stored and tied to your account, apart from your username and password.
+          </div>
+          <div id="fileList">Loading...</div>
+          <div style="margin-top:20px; padding-top:10px; border-top:1px solid #eee;">
+              <button id="btnDeleteLocal" onclick="deleteLocalData()" class="secondary" style="width:100%; color:#d73a49; border-color:#d73a49;">Delete local data and user</button>
+          </div>
+      </div>
+  </div>
+
+  <!-- File viewer modal -->
+  <div id="fileViewModal" class="modal-overlay hidden">
+      <div class="modal-content" style="max-width:600px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+              <h3 id="viewFileName" style="margin:0;">File Content</h3>
+              <button onclick="closeFileViewModal()" class="secondary" style="padding:4px 8px;">X</button>
+          </div>
+          <textarea id="fileContentArea" style="width:100%; height:300px; font-family:monospace; padding:10px; border:1px solid #e5e7eb; border-radius:4px;" readonly></textarea>
+          <div style="margin-top:10px; text-align:right;">
+              <button id="deleteFileBtn" class="secondary" style="color:#d73a49; border-color:#d73a49;">Delete This File</button>
+          </div>
+      </div>
+  </div>
+  
+  <button class="fab-btn" onclick="toggleInfoModal()" title="About B.I.S.O.N">?</button>
+
+  <div id="infoModal" class="modal-overlay hidden">
+      <div class="modal-content">
+          <h2 id="uiInfoTitle" style="margin-top:0;">How B.I.S.O.N Works</h2>
+          
+          <div class="info-section">
+              <h4 id="uiInfoT5Header">The T5 Model</h4>
+              <p id="uiInfoT5Text">We use a specialized AI model (Google-MT5-base) which has been trained specifically to generate sentences in Norwegian! It has essentially been shown many examples of words and their labels, which means that we can show it what labels you want to practice, and it will create new sentences which contain those words for you to practice on.</p>
+          </div>
+
+          <div class="info-section">
+              <h4 id="uiInfoClustersHeader">Magic Clusters</h4>
+              <p id="uiInfoClustersText">The labels are divided into 2 parts. One type of label focuses only on grammatical rules (Eg; "NOUN", "obj"), whilst the other part is the "magic" labels. These are called magic labels beacuse there is no way of truly knowing why they are associated with each other. This is because the patterns are those which are found only in the "brain" of the AI, similarily to how humans also have their individual ways of thinkng. Additionally, the AI has incredibly good pattern discovery skills, and since its a computer program, we are capable of actually storing these patterns. This means that when you see 2 words which look completely different, but are associated with the same magic label, then there is a hidden correlation between those words, which was found by the AI.</p>
+          </div>
+
+          <div class="info-section">
+              <h4 id="uiInfoDataHeader">Your Data</h4>
+              <p id="uiInfoDataText">The only data stored by our program is your scores for each individual label and your username / password. This is done to store your progress, and to ensure that the AI can create questions which are relevant to you. All your mastery scores are displayed on the screen, but can also be viewed or deleted by using the "Manage My Data" button.</p>
+          </div>
+
+          <button id="uiInfoGotItBtn" onclick="toggleInfoModal()" class="secondary" style="width:100%; margin-top:10px;">Got it!</button>
+      </div>
+  </div>
+
+  <div id="tutorialModal" class="modal-overlay hidden">
+      <div class="modal-content">
+          <h2 id="uiTutTitle" style="margin-top:0;">How to use B.I.S.O.N</h2>
+          <div class="info-section">
+              <p id="uiTutIntro">In order to start, press the "run" button. Then you will be faced by a sentence with one or more missing words. Your task is to fill in these words. The missing word in the sentence is associated with one or more labels. Labels are essentially groups of words which have some sort of similarity.</p>
+              <p id="uiTutProgress">As you progress, your scores for individual labels will be placed into 5 different tiers of mastery based on your success with words associated with those labels. You can then choose which of these tiers you wish to practice.</p>
+              <p id="uiTutRec">It is recommended to use the exploration method (tier 3) for at least 15 tasks. That way you will have been graded on enough groups of words that you can start practicing those you scored the worst on, or maybe rehearse those you previously did good on.</p>
+              <p id="uiTutGroups">There are nearly 70 different groups of words when you include those which are based purely on grammar rules. That is a lot groups to explore!</p>
+          </div>
+          <div class="info-section">
+              <h4 id="uiTutGoodToKnowHeader">Good to know:</h4>
+              <ul style="padding-left:20px; margin:0; font-size:0.9em; color:#4b5563;">
+                  <li id="uiTutGoodToKnow1">You can delete your data and your account through the "Manage My Data" button.</li>
+                  <li id="uiTutGoodToKnow2" style="margin-top:5px;">You can view other words related to labels which you are curious about by clicking the "View Cluster Dictionary" button.</li>
+                  <li id="uiTutGoodToKnow3" style="margin-top:5px;">You can change language, difficulty or ask for hints by using the buttons surrounding the text field.</li>
+              </ul>
+          </div>
+          <button onclick="toggleTutorialModal()" class="secondary" style="width:100%; margin-top:20px;">Close Tutorial</button>
+      </div>
+  </div>
+  
+  <script src="INTEGRATEDjs_2.js"></script>
+</body>
+</html>
